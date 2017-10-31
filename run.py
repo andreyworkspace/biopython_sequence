@@ -1,33 +1,37 @@
-from Bio.SeqIO import parse #импортируем метот из либы
+from Bio.SeqIO import parse
+import argparse
+import sys
+import os.path
 
-counter = 0 #общий счетчик
+def parseFile(fileName, out, counter):
+    temp_counter = 0  # счетчик для файла
+    out.write('{}:\n\n'.format(fileName))
+    for record in parse(fileName, os.path.splitext(fileName)[1][1:]):  # обходим все записи. splitext - получаем разширение файла, без точки
+        counter += 1  # инкремент счетчика
+        temp_counter += 1  # инкремент счетчика
+        out.write('{0} {1}\n'.format(temp_counter, record.name))  # записываем в файл. 0 = порядковый номер, 1 = название
+    out.write('\nкол-во последовательностей в {0}: {1}\n\n'.format(fileName, temp_counter))  # записываем в файл кол-во последовательностей в файле
+    return counter #возвращаем общий счётчик
 
-file = open('log.txt', 'w') #открыли файл на чтение
+parser = argparse.ArgumentParser(prog='bio_counter', description="Подсчёт последовательностей")
+parser.add_argument("-o", "--out", help="результирующий файл", default='out.txt')
+parser.add_argument("-f", "--files", help="входные данные", nargs='+')
+args = parser.parse_args()
 
-file.write('sequence.fasta:\n')
-file.write('\n')
-temp_counter = 0 #счетчик для файла
-for record in parse("sequence.fasta", "fasta"): #обходим все записи
-    counter += 1 #инкремент счетчика
-    temp_counter += 1 #инкремент счетчика
-    file.write('{0} {1}\n'.format(temp_counter, record.name)) #записываем в файл. 0 = порядковый номер, 1 = название
-file.write('\n')
-file.write('кол-во записей в sequence.fasta: {}\n'.format(temp_counter)) #записываем в файл кол-во записей в файле
+# проверка на обзятельный параметр
+if not args.files:
+    print('Ошибка, укажите файл с входными данными\n')
+    print(parser.print_help())
+    sys.exit()
 
-file.write('\n')
-file.write('\n')
-file.write('sequence.gb:\n')
-file.write('\n')
-temp_counter = 0
-for record in parse("sequence.gb", "genbank"):
-    counter += 1
-    temp_counter += 1
-    file.write('{0} {1}\n'.format(temp_counter, record.name))
-file.write('\n')
-file.write('кол-во записей в sequence.gb: {}\n'.format(temp_counter))
+counter = 0  # общий счетчик
+outFile = open(args.out, 'w') #открыли файл на запись
 
-file.write('\n')
-file.write('\n')
-file.write('общее кол-во записей: {}'.format(counter)) #записываем в файл общее кол-во записей
+for fileName in args.files:
+    if not os.path.isfile(fileName): # проверка существования файла
+        outFile.write('файла {} не существует\n\n'.format(fileName))
+    else:
+        counter = parseFile(fileName, outFile, counter)
 
-file.close() #закрыли файл
+outFile.write('\n\nобщее кол-во последовательностей: {}'.format(counter)) #записываем в файл общее кол-во последовательностей
+outFile.close() #закрыли файл
